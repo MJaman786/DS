@@ -1,26 +1,25 @@
 import java.net.Socket;
+import java.time.LocalTime;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.time.LocalTime;
 
 public class Client {
     public static void main(String[] args) throws Exception {
-        Socket socket = new Socket("localhost", 5000); // Connect to server
+        Socket socket = new Socket("localhost", 5000);
 
-        // Step 1: Get current time in hh:mm format
-        LocalTime currentTime = LocalTime.now();
-        String time = String.format("%02d:%02d", currentTime.getHour(), currentTime.getMinute());
-        System.out.println("Local Time: " + time);
+        LocalTime currTime = LocalTime.now();
+        String time = String.format("%02d:%02d:%02d", currTime.getHour(), currTime.getMinute(), currTime.getSecond());
 
-        // Step 2: Send current time to server
+        System.out.println(" - Before Synchronization: " + time);
+
         DataOutputStream output = new DataOutputStream(socket.getOutputStream());
         output.writeUTF(time);
 
-        // Step 3: Receive synchronized time from server
         DataInputStream input = new DataInputStream(socket.getInputStream());
-        String syncedTime = input.readUTF();
-        System.out.println("Synchronized Time: " + syncedTime);
+        String syncTime = input.readUTF();
 
-        socket.close(); // Close connection
+        System.out.println("   After Synchronization: " + syncTime);
+
+        socket.close();
     }
 }
