@@ -1,46 +1,68 @@
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.time.LocalTime;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.time.LocalTime;
 
-public class Server {
-    public static void main(String[] args) throws Exception {
-        ServerSocket server = new ServerSocket(5000);
-        System.out.println("Server started. Waiting for 3 clients...");
+public class Server{
+	public static void main(String[] args) throws Exception{
+		ServerSocket server = new ServerSocket(5000);
+		System.out.println("Server is running on port: 5000");
+		
+		String[] clientTime = new String[3];
+		Socket[] client = new Socket[3];
+		
+		for(int i=0; i<3; i++){
+			client[i] = server.accept();
+			DataInputStream input = new DataInputStream(client[i].getInputStream());
+			clientTime[i] = input.readUTF(); 
+			System.out.println(" - Client "+(i+1)+" connected\n  Before Synchronization: "+clientTime[i]);
+		}
+		
+		int totalSeconds = 0;
+		for(int i=0; i<3; i++){
+			LocalTime timeObj = LocalTime.parse(clientTime[i]);
+			int seconds = timeObj.getHour() * 3600 + timeObj.getMinute() * 60 + timeObj.getSecond();
+			totalSeconds += seconds;
+		}
+		
+		int avgSeconds = totalSeconds / 3;
+		int avgHour = avgSeconds / 3600;
+		int avgMinu = (avgSeconds % 3600) / 60;
+		int avgSec = avgSeconds % 60;
+		
+		String syncTime = String.format("%02d:%02d:%02d", avgHour, avgMinu, avgSec);
+		System.out.println("+ Synchronized time send to all clients: "+syncTime);
 
-        String[] clientTimes = new String[3]; // To store client time strings
-        Socket[] clients = new Socket[3];     // To store client sockets
-
-        // Step 1: Accept connections and read time from clients
-        for (int i = 0; i < 3; i++) {
-            clients[i] = server.accept();
-            DataInputStream input = new DataInputStream(clients[i].getInputStream());
-            clientTimes[i] = input.readUTF(); // Receive time like "03:25"
-            System.out.println("Client " + (i + 1) + " Time: " + clientTimes[i]);
-        }
-
-        // Step 2: Calculate average time
-        int totalMinutes = 0;
-        for (int i = 0; i < 3; i++) {
-            LocalTime timeObj = LocalTime.parse(clientTimes[i]);
-            int minutes = timeObj.getHour() * 60 + timeObj.getMinute();
-            totalMinutes += minutes;
-        }
-
-        int avgMinutes = totalMinutes / 3;
-        int avgHour = avgMinutes / 60;
-        int avgMin = avgMinutes % 60;
-        String avgTime = String.format("%02d:%02d", avgHour, avgMin);
-
-        System.out.println("Synchronized Time: " + avgTime);
-
-        // Step 3: Send synchronized time to all clients
-        for (int i = 0; i < 3; i++) {
-            DataOutputStream output = new DataOutputStream(clients[i].getOutputStream());
-            output.writeUTF(avgTime); // Send average time
-        }
-
-        server.close();
-    }
+		for(int i=0; i<3; i++){
+			DataOutputStream output = new DataOutputStream(client[i].getOutputStream());
+			output.writeUTF(syncTime); 
+		}
+		server.close();
+	}
 }
+
+/*
++---------------------------------------------------------+
+|                  Server (Coordinator)                   |
+|                                                         |
+|  1. Waits for connections from 3 clients                |
+|  2. Collects their local times (HH:MM:SS)               |
+|  3. Calculates average time (in seconds)                |
+|  4. Sends synchronized time to all clients              |
++---------------------------------------------------------+
+              ↓           ↓           ↓
+        +----------+ +----------+ +----------+
+        | Client 1 | | Client 2 | | Client 3 |
+        +----------+ +----------+ +----------+
+          05:34:41     05:34:51     05:35:06   
+          (Before)     (Before)     (Before)
+
+                    ↓ (Server averages)
+
+             🕑 New Time: 05:34:52
+
+          05:34:52     05:34:52     05:34:52   
+           (After)      (After)      (After)
+
+*/
