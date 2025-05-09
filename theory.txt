@@ -1,0 +1,113 @@
+Okay, let's go through the theory behind each of these distributed computing practicals.
+Theory for Distributed Computing Practicals
+Here's a breakdown of the theory behind each of the practicals you listed, suitable for writing in an exam paper.
+1. Multi-threaded Client/Server Process Communication using RMI
+Theory:
+Remote Method Invocation (RMI) is a Java API that allows a Java object running in one Java Virtual Machine (JVM) to invoke methods on a remote Java object running in a different JVM. RMI provides a mechanism for distributed object communication, making it appear as if the remote object is local.
+Key Concepts:
+ * RMI Registry: A naming service that allows servers to register remote objects and clients to look up these objects by name.
+ * Remote Interface: Defines the methods that can be invoked remotely. This interface extends java.rmi.Remote and its methods must declare that they can throw java.rmi.RemoteException.
+ * Remote Object (Server-side): An object that implements a remote interface and whose methods can be invoked remotely. It typically extends java.rmi.server.UnicastRemoteObject or java.rmi.server.RemoteServer.
+ * Stub (Client-side proxy): A client-side representation of the remote object. It implements the remote interface and acts as a gateway to the remote object. When a client invokes a method on the stub, the stub handles the communication with the remote object.
+ * Skeleton (Server-side proxy - largely handled internally now): On the server side, the skeleton (though often implicitly handled by RMI now) receives the incoming calls, unpacks the parameters, and invokes the corresponding method on the actual remote object.
+ * Marshalling: The process of converting objects into a stream of bytes for transmission over the network.
+ * Unmarshalling: The process of converting a stream of bytes back into objects upon reception.
+Multi-threading in Client/Server:
+Using multiple threads in a server allows it to handle multiple client requests concurrently. When a client connects, the server can spawn a new thread to handle that specific client's requests, allowing other clients to be served without waiting.
+Process Communication: RMI facilitates inter-process communication (IPC) between the client and server processes, even if they are running on different machines.
+In the Practical: You would implement a remote interface, a server that implements this interface and registers an instance with the RMI registry, and a client that looks up the remote object and invokes its methods. The server would likely use threads to handle concurrent client requests.
+2. Distributed Application using CORBA for Object Brokering (Calculator or String Operations)
+Theory:
+Common Object Request Broker Architecture (CORBA) is an open, vendor-independent architecture and infrastructure that allows objects to communicate with each other across networks, regardless of the programming language they are written in or the operating system they run on.
+Key Concepts:
+ * Object Request Broker (ORB): The middleware that enables communication between clients and servers. Each application involved in a CORBA interaction must have an ORB. The ORB is responsible for finding the object implementation, preparing it to receive requests, and communicating the data making up the requests.
+ * Interface Definition Language (IDL): A language-independent specification language used to define the interfaces that remote objects will implement. Clients use these interface definitions to understand the available operations.
+ * Stubs (Client-side): Generated from the IDL, these act as proxies for the remote object on the client side. They handle the marshalling of arguments and communication with the ORB.
+ * Skeletons (Server-side): Also generated from the IDL, these act as intermediaries on the server side. They receive incoming requests from the ORB, unmarshal the arguments, and dispatch the call to the actual object implementation.
+ * Object Adapter: An object on the server side that assists in registering object implementations with the ORB and in activating and deactivating objects.
+ * Naming Service: A service that allows clients to look up objects by name.
+Object Brokering: CORBA's central concept is the ORB, which acts as an object broker. Clients don't directly communicate with server objects. Instead, they interact through the ORB, which handles the details of locating the server object, marshaling/unmarshaling data, and delivering the request and response.
+In the Practical: You would define the calculator or string operation interface using IDL, compile it to generate stubs and skeletons, implement the server object, register it with the ORB (often via a naming service), and create a client that uses the generated stub to invoke operations on the remote object.
+3. Distributed System for Sum of N Elements using MPI or OpenMP
+Theory (Focusing on MPI):
+Message Passing Interface (MPI) is a standardized and portable message-passing system designed to function on a wide variety of parallel computing architectures. It allows processes to communicate with each other by sending and receiving messages. MPI is commonly used for distributed memory systems.
+Key Concepts:
+ * Processes: In MPI, computation is performed by multiple processes that can run on different processors or nodes.
+ * Communicator: A group of processes that can communicate with each other. MPI_COMM_WORLD is the default communicator containing all MPI processes.
+ * Message Passing: The fundamental way processes interact in MPI. A message typically includes data, a source rank, a destination rank, and a tag to identify the message type.
+ * Point-to-Point Communication: Involves direct communication between two processes (e.g., MPI_Send, MPI_Recv).
+ * Collective Communication: Involves communication among a group of processes (e.g., MPI_Scatter, MPI_Gather, MPI_Reduce).
+Distributed Sum Calculation:
+To find the sum of N elements in an array using n processors with MPI:
+ * The array is divided into n (approximately) equal chunks.
+ * Each of the n processes receives one chunk of the array.
+ * Each process calculates the local sum of its assigned elements.
+ * These local sums are then combined (e.g., using MPI_Reduce or by sending each local sum to a designated root process) to obtain the final global sum.
+Intermediate Sums: To demonstrate the intermediate calculations, each process can display its local sum before the final aggregation.
+In the Practical: You would write an MPI program where the initial array is distributed among the processes. Each process calculates the sum of its portion, and then these partial sums are combined to get the final result. You would also include print statements to show the intermediate sums calculated by each process.
+(If using OpenMP):
+OpenMP is an API that supports multi-platform shared-memory parallel programming in C, C++, and Fortran. It uses compiler directives, library routines, and environment variables to create parallel regions of code.
+Key Concepts:
+ * Shared Memory: OpenMP is designed for systems where threads can directly access a shared memory space.
+ * Threads: OpenMP uses threads to execute code in parallel.
+ * Parallel Regions: Blocks of code that will be executed by multiple threads.
+ * Work-sharing Constructs: Directives that specify how work within a parallel region should be divided among the threads (e.g., for, sections).
+Distributed Sum Calculation (using OpenMP on a single multi-core machine, as true distribution across multiple machines isn't the primary focus of standard OpenMP):
+ * The array is shared among the OpenMP threads.
+ * A parallel region is created.
+ * A work-sharing construct (like a parallel for loop) is used to divide the array elements among the threads.
+ * Each thread calculates a partial sum of its assigned elements.
+ * A mechanism (like a reduction clause or explicit synchronization) is used to combine the partial sums into a final sum.
+Intermediate Sums: Each thread can store or display its partial sum before the final reduction.
+4. Implement Berkeley Algorithm for Clock Synchronization
+Theory:
+The Berkeley Algorithm is a clock synchronization algorithm for distributed systems where there is no central authoritative time source. Instead, a designated coordinator process (often the one with the most stable clock) actively polls all other processes in the system, called slaves.
+Steps:
+ * The coordinator polls all other processes in the system for their current clock times.
+ * The slaves respond with their clock values.
+ * The coordinator calculates an average of all the reported times (including its own clock time). It might discard readings from faulty clocks that are significantly different.
+ * The coordinator then tells each slave how much it needs to adjust its clock. These adjustments might be positive (speed up) or negative (slow down).
+Key Idea: The Berkeley algorithm focuses on internal consistency, ensuring that all clocks in the system agree with each other, rather than with an external real-time source.
+In the Practical: You would simulate multiple processes with their own logical clocks. One process would act as the coordinator. You would implement the polling, response, averaging, and adjustment phases of the algorithm. You would need to handle the simulation of time passing and the initial clock drifts.
+5. Implement Token Ring Based Mutual Exclusion Algorithm
+Theory:
+The Token Ring Algorithm is a distributed mutual exclusion algorithm for a network of processes. A special message called a token circulates around the ring. A process can enter its critical section only if it possesses the token.
+Algorithm:
+ * A single token circulates in a logical ring of processes.
+ * If a process does not need to enter its critical section, it simply passes the token to the next process in the ring.
+ * If a process wants to enter its critical section, it waits until it receives the token. Once it has the token, it can enter its critical section.
+ * After exiting the critical section, the process releases the token, which is then passed to the next process in the ring.
+Mutual Exclusion: Only the process holding the token can enter the critical section, thus ensuring mutual exclusion.
+In the Practical: You would simulate a ring of processes. You would need to implement the passing of the token and the logic for a process to request, acquire (by waiting for the token), use, and release the token. You would demonstrate that only one process can be in its "critical section" at any given time.
+6. Implement Bully and Ring Algorithm for Leader Election
+Theory (Bully Algorithm):
+The Bully Algorithm is a leader election algorithm suitable for synchronous distributed systems. When a process notices that the current leader has failed (e.g., by not responding to a request), it initiates an election.
+Algorithm:
+ * A process P starts an election if it doesn't know who the leader is or if the current leader has failed.
+ * P sends an "election" message to all processes with a higher ID.
+ * If any higher-ID process responds with an "OK" message, P withdraws from the election.
+ * If no higher-ID process responds, P declares itself the leader and sends a "victory" message to all lower-ID processes.
+ * If a process Q receives an "election" message from a lower-ID process P, Q sends an "OK" response to P and starts its own election (if it hasn't already).
+ * If a process receives a "victory" message, it sets the sender as the new leader.
+Theory (Ring Algorithm):
+The Ring Algorithm is another leader election algorithm, typically used in systems organized as a logical ring.
+Algorithm:
+ * When a process notices the leader has failed, it initiates an election by sending an "election" message containing its own ID to its neighbor in the ring.
+ * When a process receives an "election" message:
+   * If its ID is not in the message, it adds its ID to the message and forwards it to the next neighbor.
+   * If its ID is already in the message, it means the message has circulated back. The process with the highest ID in the message is declared the leader. This process then sends a "leader" message around the ring, announcing the elected leader.
+In the Practical: You would simulate a set of processes with unique IDs arranged in some order (for the Bully algorithm, you need to know which processes have higher IDs; for the Ring algorithm, you need to define the ring structure). You would implement the message passing and the logic for starting an election, responding to election messages, and declaring a leader.
+7. Create a Simple Web Service and Write a Distributed Application to Consume It
+Theory:
+A Web Service is a software system designed to support interoperable machine-to-machine interaction over a network. It has an interface described in a machine-processable format (specifically WSDL - Web Services Description Language). Other systems interact with the web service in a manner prescribed by its description using SOAP (Simple Object Access Protocol) messages, typically conveyed using HTTP with XML. More modern web services often use RESTful APIs with formats like JSON.
+Key Concepts:
+ * Service Provider: The application that hosts the web service.
+ * Service Consumer: The application that uses the web service.
+ * SOAP (Simple Object Access Protocol): An XML-based messaging protocol used for exchanging structured information in the implementation of web services.
+ * WSDL (Web Services Description Language): An XML-based language used for describing the functionality offered by a web service.
+ * UDDI (Universal Description, Discovery, and Integration): A platform-independent, XML-based registry for businesses worldwide to list themselves and their services. (Less commonly used now; discovery often happens through other means).
+ * REST (Representational State Transfer): An architectural style for building web services. RESTful services often use standard HTTP methods (GET, POST, PUT, DELETE) and data formats like JSON.
+Distributed Application Consuming a Web Service:
+A distributed application can leverage the functionality of a web service by sending requests to it over the network and processing the responses. This allows different parts of the distributed system to utilize services provided by other components, regardless of their underlying implementation details.
+In the Practical: You would first create a simple web service (e.g., using Java with JAX-WS for SOAP or Spring Boot for REST). This service would expose some functionality (e.g., a simple calculation or data retrieval). Then, you would create a separate client application that uses the web service by sending requests and processing the responses. This demonstrates how a distributed application can consume services offered by other distributed components.
+Let me know if you would like a more detailed explanation of any of these topics!
